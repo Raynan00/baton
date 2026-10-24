@@ -3,6 +3,9 @@
 
 pub mod crypto;
 pub mod error;
+pub mod noise;
+pub mod outbox;
+pub mod pairing_link;
 pub mod restore_url;
 pub mod router;
 pub mod sas;

@@ -12,6 +12,7 @@
 ## Done
 - Monorepo skeleton: Cargo workspace, `config/identity.*`, `proto/baton/v1/baton.proto` (§9.2–9.3), licences (Apache-2.0 root, AGPL-3.0 `server/`), DCO notes, gitleaks, cargo-deny config.
 - `baton-core`: protobuf types (prost via protox, no system `protoc`), HPKE Auth-mode seal/open with header-as-AAD (tests: round trip, no plaintext on wire, wrong sender / tampered header rejected), SAS code, restore-URL builder (YouTube `t=`, text fragments, existing `#hash`, tracking-param strip), transport router decision table. `cargo test -p baton-core`: 6 pass.
+- `baton-core` (2nd slice): Noise `IKpsk2` pairing handshake with matching SAS on both sides (wrong psk fails), `Noise_KK` LAN link (unknown peer rejected), pairing-link build/parse (params in URL fragment), SQLite outbox (idempotent enqueue, stale drop at 15 min, 1 s→5 min backoff), JSON restore-URL vectors. 13 unit + 1 vector test pass; clippy/fmt clean.
 - `server/`: Worker skeleton with `/healthz`, Vitest in the Workers pool (1 pass), `tsc` clean.
 - CI workflows: `ci-rust`, `ci-server` real; `ci-ios`, `ci-desktop`, `ci-ext` are placeholders that no-op until their projects land; `gitleaks`. **None have run yet** (no CI links to cite).
 
@@ -19,7 +20,7 @@
 - Nothing mid-flight.
 
 ## Next
-- Noise IKpsk2 pairing + SAS wiring, Noise_KK LAN link, pairing-link parse/build, SQLite outbox, JSON test vectors.
+- `baton-core`: socket framing for the LAN link, mDNS advert/discovery, HPKE/pairing JSON vectors (HPKE needs deterministic-RNG hook).
 - Server: Baton-Sig auth, DOs, R2, APNs interface + mock-apns.
 - Remaining items from the plan above.
 

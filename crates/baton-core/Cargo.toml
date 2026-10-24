@@ -17,6 +17,9 @@ blake2 = "0.10"
 url = "2"
 percent-encoding = "2"
 hex = "0.4"
+snow = "0.9"
+rusqlite = { version = "0.32", features = ["bundled"] }
+base64 = "0.22"
 
 [build-dependencies]
 prost-build = "0.13"

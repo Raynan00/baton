@@ -1,0 +1,6 @@
+[
+  {"url":"https://www.youtube.com/watch?v=abc123&list=x","fragment":"","t":761.9,"want":"https://youtu.be/abc123?t=761"},
+  {"url":"https://youtu.be/abc123","fragment":"","t":5.0,"want":"https://youtu.be/abc123?t=5"},
+  {"url":"https://ex.com/a","fragment":"two words","t":null,"want":"https://ex.com/a#:~:text=two%20words"},
+  {"url":"https://ex.com/a#sec","fragment":"x","t":null,"want":"https://ex.com/a#sec:~:text=x"}
+]
