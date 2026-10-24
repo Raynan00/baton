@@ -1,11 +1,19 @@
 name = "batonsync-relay"
 main = "src/index.ts"
-compatibility_date = "2025-01-01"
+compatibility_date = "2025-09-01"
 compatibility_flags = ["nodejs_compat"]
 
 [vars]
 ENV = "dev"
 MODE = "full"
+
+[[durable_objects.bindings]]
+name = "DEVICE"
+class_name = "DeviceDO"
+
+[[migrations]]
+tag = "v1"
+new_sqlite_classes = ["DeviceDO"]
 
 [env.dev.vars]
 ENV = "dev"
@@ -15,4 +23,4 @@ MODE = "full"
 ENV = "prod"
 MODE = "full"
 # Secrets (never in this file): APNS_KEY_P8, APNS_KEY_ID, APNS_TEAM_ID, APNS_TOPIC
-# Durable Objects (DeviceDO, RendezvousDO) and the R2 bucket (batonsync-blobs) are added in the next PR.
+# RendezvousDO, the R2 bucket (batonsync-blobs) and per-env DO bindings follow in later PRs.
