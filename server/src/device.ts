@@ -6,6 +6,8 @@ import { parseEnvelope } from "./envelope";
 
 export interface Env {
   DEVICE: DurableObjectNamespace<DeviceDO>;
+  RENDEZVOUS: DurableObjectNamespace;
+  BLOBS: R2Bucket;
   ENV: string;
   MODE: string;
   APNS_KEY_P8?: string;
@@ -16,6 +18,9 @@ export interface Env {
 
 const MAX_TTL_S = 86_400;
 const MAX_ALERTS_PER_HOUR = 12;
+// Single-request PUTs are buffered for signing, so stay well under the 128 MB isolate limit; chunked uploads come later.
+const MAX_BLOB_BYTES = 32 * 1024 * 1024;
+const DAILY_BLOB_BYTES = 1024 * 1024 * 1024;
 const json = (o: unknown, status = 200) => Response.json(o, { status });
 
 export class DeviceDO extends DurableObject<Env> {
@@ -26,6 +31,7 @@ export class DeviceDO extends DurableObject<Env> {
     this.sql.exec(`
       CREATE TABLE IF NOT EXISTS device (id TEXT PRIMARY KEY, ed_pub BLOB, x_pub BLOB, platform TEXT);
       CREATE TABLE IF NOT EXISTS push (id INTEGER PRIMARY KEY CHECK (id = 1), tokens TEXT);
+      CREATE TABLE IF NOT EXISTS blob_usage (at_ms INTEGER, bytes INTEGER);
       CREATE TABLE IF NOT EXISTS alerts (at_ms INTEGER);
       CREATE TABLE IF NOT EXISTS peers (peer_id TEXT PRIMARY KEY);
       CREATE TABLE IF NOT EXISTS mailbox (seq INTEGER PRIMARY KEY AUTOINCREMENT, msg_id TEXT UNIQUE,
@@ -58,6 +64,8 @@ export class DeviceDO extends DurableObject<Env> {
       this.sql.exec("DELETE FROM peers WHERE peer_id = ?", url.pathname.slice(10));
       return json({});
     }
+    if (route === "POST /v1/blobs") return this.newBlob(dev.id, body);
+    if (url.pathname.startsWith("/v1/blobs/")) return this.blob(dev.id, req, url.pathname.slice(10), body);
     if (route === "POST /v1/messages") return this.send(dev.id, body);
     if (route === "GET /v1/messages") return this.drain(url);
     if (req.method === "DELETE" && url.pathname.startsWith("/v1/messages/")) {
@@ -113,6 +121,56 @@ export class DeviceDO extends DurableObject<Env> {
       else rejected.push({ msg_id: msgId, reason: res });
     }
     return json({ accepted, rejected });
+  }
+
+  /** RPC: may `senderId` send to this device? */
+  async allows(senderId: string): Promise<boolean> {
+    return this.sql.exec("SELECT 1 FROM peers WHERE peer_id = ?", senderId).toArray().length > 0;
+  }
+
+  /** `POST /v1/blobs {size, recipient}` -> `{blob_id, put_url, expires_at}`; quota-checked. */
+  private async newBlob(owner: string, body: Uint8Array) {
+    let b: { size?: number; recipient?: string };
+    try { b = JSON.parse(new TextDecoder().decode(body)); } catch { return json({ error: "bad body" }, 400); }
+    if (!b.size || b.size < 1 || b.size > MAX_BLOB_BYTES || !b.recipient || !/^[0-9a-f]{32}$/.test(b.recipient)) {
+      return json({ error: "bad request" }, 400);
+    }
+    if (!(await this.env.DEVICE.get(this.env.DEVICE.idFromName(b.recipient)).allows(owner))) return json({ error: "not_paired" }, 403);
+    this.sql.exec("DELETE FROM blob_usage WHERE at_ms < ?", Date.now() - 86_400_000);
+    const used = (this.sql.exec("SELECT COALESCE(SUM(bytes), 0) AS n FROM blob_usage").toArray()[0] as { n: number }).n;
+    if (used + b.size > DAILY_BLOB_BYTES) return json({ error: "quota" }, 429);
+    this.sql.exec("INSERT INTO blob_usage VALUES (?, ?)", Date.now(), b.size);
+    const id = crypto.randomUUID().replace(/-/g, "");
+    await this.env.BLOBS.put(`${owner}/${id}`, new Uint8Array(0), { customMetadata: { recipient: b.recipient, size: String(b.size), state: "pending" } });
+    return json({ blob_id: `${owner}.${id}`, put_url: `/v1/blobs/${owner}.${id}`, expires_at: Date.now() + 86_400_000 }, 201);
+  }
+
+  /** PUT (owner uploads), GET (owner or recipient, Range ok), DELETE (owner or recipient = ack). */
+  private async blob(caller: string, req: Request, blobId: string, body: Uint8Array) {
+    const [owner, id] = blobId.split(".");
+    if (!owner || !id || !/^[0-9a-f]+$/.test(id)) return json({ error: "not found" }, 404);
+    const key = `${owner}/${id}`;
+    const head = await this.env.BLOBS.head(key);
+    if (!head) return json({ error: "not found" }, 404);
+    const recipient = head.customMetadata?.recipient;
+    const isOwner = caller === owner;
+    if (!isOwner && caller !== recipient) return json({ error: "forbidden" }, 403);
+    if (req.method === "PUT") {
+      if (!isOwner || body.length !== Number(head.customMetadata?.size)) return json({ error: "bad upload" }, 400);
+      await this.env.BLOBS.put(key, body, { customMetadata: { ...head.customMetadata, state: "ready" } });
+      return json({});
+    }
+    if (req.method === "DELETE") {
+      await this.env.BLOBS.delete(key);
+      return json({});
+    }
+    if (req.method === "GET") {
+      if (head.customMetadata?.state !== "ready") return json({ error: "not ready" }, 409);
+      const obj = await this.env.BLOBS.get(key, { range: req.headers });
+      if (!obj || !("body" in obj)) return json({ error: "not found" }, 404);
+      return new Response(obj.body, { status: req.headers.has("Range") ? 206 : 200, headers: { "content-type": "application/octet-stream" } });
+    }
+    return json({ error: "not found" }, 404);
   }
 
   /** RPC from a sender's DO. Only paired senders are accepted. */

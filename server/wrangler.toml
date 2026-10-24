@@ -11,9 +11,21 @@ MODE = "full"
 name = "DEVICE"
 class_name = "DeviceDO"
 
+[[durable_objects.bindings]]
+name = "RENDEZVOUS"
+class_name = "RendezvousDO"
+
+[[r2_buckets]]
+binding = "BLOBS"
+bucket_name = "batonsync-blobs"
+
 [[migrations]]
 tag = "v1"
 new_sqlite_classes = ["DeviceDO"]
+
+[[migrations]]
+tag = "v2"
+new_sqlite_classes = ["RendezvousDO"]
 
 [env.dev.vars]
 ENV = "dev"
@@ -23,4 +35,4 @@ MODE = "full"
 ENV = "prod"
 MODE = "full"
 # Secrets (never in this file): APNS_KEY_P8, APNS_KEY_ID, APNS_TEAM_ID, APNS_TOPIC
-# RendezvousDO, the R2 bucket (batonsync-blobs) and per-env DO bindings follow in later PRs.
+# R2 bucket needs a 1-day lifecycle rule (see PROGRESS.md: Blocked).
