@@ -1,0 +1,142 @@
+syntax = "proto3";
+package baton.v1;
+
+// §9.2 Outer envelope (visible to the server; identical on the LAN link).
+message Envelope {
+  uint32 v = 1;
+  bytes msg_id = 2;
+  bytes sender = 3;
+  bytes recipient = 4;
+  uint64 sent_at_ms = 5;
+  uint32 ttl_s = 6;
+  PushHint push = 7;
+  bytes collapse_key = 8;
+  bytes hpke_enc = 9;
+  bytes ciphertext = 10;
+}
+
+enum PushHint {
+  PUSH_HINT_NONE = 0;
+  PUSH_HINT_ALERT = 1;
+  PUSH_HINT_LA_START = 2;
+  PUSH_HINT_LA_UPDATE = 3;
+  PUSH_HINT_LA_END = 4;
+}
+
+// §9.3 Inner payload (E2E).
+message Payload {
+  oneof kind {
+    Continue continue = 1;
+    Withdraw withdraw = 2;
+    Clip clip = 3;
+    FileOffer file_offer = 4;
+    Ack ack = 5;
+    DeviceInfo device_info = 6;
+    KeyRotation key_rotation = 7;
+    Unpair unpair = 8;
+  }
+}
+
+enum Reason {
+  REASON_UNSPECIFIED = 0;
+  REASON_LOCK = 1;
+  REASON_IDLE = 2;
+  REASON_SLEEP = 3;
+  REASON_MANUAL = 4;
+  REASON_SHARE = 5;
+  REASON_EXTENSION = 6;
+}
+
+message Continue {
+  string item_id = 1;
+  Reason reason = 2;
+  string url = 3;
+  string restore_url = 4;
+  string title = 5;
+  string site_name = 6;
+  float scroll_fraction = 7;
+  string text_fragment = 8;
+  Media media = 9;
+  uint64 captured_at_ms = 10;
+  string source_app = 11;
+  ClipRef attached_clip = 12;
+}
+
+message Media {
+  double current_time_s = 1;
+  double duration_s = 2;
+  bool playing = 3;
+  string youtube_id = 4;
+}
+
+message Withdraw { string item_id = 1; }
+
+message Clip {
+  string clip_id = 1;
+  oneof body {
+    string text = 2;
+    BlobRef image = 3;
+  }
+  uint32 char_count = 4;
+  uint64 expires_at_ms = 5;
+}
+
+message ClipRef { string clip_id = 1; }
+
+message FileOffer {
+  string file_id = 1;
+  string name = 2;
+  uint64 size = 3;
+  string mime = 4;
+  bytes sha256 = 5;
+  bytes file_key = 6;
+  bytes nonce_prefix = 7;
+  uint32 chunk_size = 8;
+  BlobRef blob = 9;
+}
+
+message BlobRef {
+  string blob_id = 1;
+  uint64 size = 2;
+}
+
+enum Status {
+  STATUS_UNSPECIFIED = 0;
+  STATUS_DELIVERED = 1;
+  STATUS_OPENED = 2;
+  STATUS_REJECTED = 3;
+  STATUS_UNSUPPORTED = 4;
+}
+
+message Ack {
+  bytes msg_id = 1;
+  Status status = 2;
+}
+
+enum Platform {
+  PLATFORM_UNSPECIFIED = 0;
+  PLATFORM_IOS = 1;
+  PLATFORM_WINDOWS = 2;
+  PLATFORM_LINUX = 3;
+  PLATFORM_MACOS = 4;
+  PLATFORM_ANDROID = 5;
+}
+
+message DeviceInfo {
+  string name = 1;
+  Platform platform = 2;
+  string model_id = 3;
+  string os_version = 4;
+  uint32 protocol_min = 5;
+  uint32 protocol_max = 6;
+  uint64 caps = 7;
+  string app_version = 8;
+}
+
+message KeyRotation {
+  bytes new_x25519_pub = 1;
+  uint64 valid_from_ms = 2;
+  bytes sig_ed25519 = 3;
+}
+
+message Unpair {}

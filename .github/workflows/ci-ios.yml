@@ -1,0 +1,16 @@
+name: ci-ios
+on:
+  push: { branches: [main], paths: ["apps/ios/**", "crates/baton-core/**", "crates/baton-ffi/**"] }
+  pull_request: { paths: ["apps/ios/**", "crates/baton-core/**", "crates/baton-ffi/**"] }
+jobs:
+  build:
+    runs-on: macos-latest
+    steps:
+      - uses: actions/checkout@v4
+      - name: Skip until the iOS project lands
+        run: |
+          if [ ! -f apps/ios/project.yml ]; then echo "apps/ios/project.yml not present yet"; exit 0; fi
+          brew install xcodegen
+          rustup target add aarch64-apple-ios aarch64-apple-ios-sim x86_64-apple-ios
+          cd apps/ios && xcodegen
+          xcodebuild build test -scheme Baton -destination 'platform=iOS Simulator,name=iPhone 16' CODE_SIGNING_ALLOWED=NO

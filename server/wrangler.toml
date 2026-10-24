@@ -1,0 +1,18 @@
+name = "batonsync-relay"
+main = "src/index.ts"
+compatibility_date = "2025-01-01"
+compatibility_flags = ["nodejs_compat"]
+
+[vars]
+ENV = "dev"
+MODE = "full"
+
+[env.dev.vars]
+ENV = "dev"
+MODE = "full"
+
+[env.prod.vars]
+ENV = "prod"
+MODE = "full"
+# Secrets (never in this file): APNS_KEY_P8, APNS_KEY_ID, APNS_TEAM_ID, APNS_TOPIC
+# Durable Objects (DeviceDO, RendezvousDO) and the R2 bucket (batonsync-blobs) are added in the next PR.

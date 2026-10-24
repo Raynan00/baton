@@ -1,0 +1,10 @@
+name: ci-ext
+on:
+  pull_request: { paths: ["extensions/browser/**"] }
+  push: { branches: [main], paths: ["extensions/browser/**"] }
+jobs:
+  build:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - run: echo "WXT extension build + Playwright land with extensions/browser (PROGRESS.md: Next)"

@@ -1,0 +1,13 @@
+target/
+node_modules/
+dist/
+.wrangler/
+.dev.vars
+.env
+*.p8
+*.p12
+*.mobileprovision
+*.xcodeproj/
+DerivedData/
+*.xcframework/
+.DS_Store

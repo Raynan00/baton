@@ -1,0 +1,10 @@
+name: ci-desktop
+on:
+  pull_request: { paths: ["apps/desktop/**"] }
+  push: { branches: [main], paths: ["apps/desktop/**"] }
+jobs:
+  build:
+    runs-on: windows-latest
+    steps:
+      - uses: actions/checkout@v4
+      - run: echo "Tauri MSIX + NSIS build lands with apps/desktop (PROGRESS.md: Next)"

@@ -1,0 +1,26 @@
+[package]
+name = "baton-core"
+description = "Baton protocol, crypto, pairing, transport router, restore-URL builder"
+version.workspace = true
+edition.workspace = true
+license.workspace = true
+rust-version.workspace = true
+
+[dependencies]
+prost.workspace = true
+thiserror.workspace = true
+serde.workspace = true
+serde_json.workspace = true
+hpke = { version = "0.12", default-features = false, features = ["x25519", "alloc"] }
+rand = "0.8"
+blake2 = "0.10"
+url = "2"
+percent-encoding = "2"
+hex = "0.4"
+
+[build-dependencies]
+prost-build = "0.13"
+protox = "0.7"
+
+[dev-dependencies]
+proptest = "1"

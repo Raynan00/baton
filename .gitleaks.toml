@@ -1,0 +1,4 @@
+[extend]
+useDefault = true
+[allowlist]
+paths = ['''crates/baton-core/tests/vectors/.*''']

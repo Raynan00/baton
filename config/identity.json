@@ -1,0 +1,13 @@
+{
+  "name": "Baton",
+  "slug": "batonsync",
+  "domain": "batonsync.app",
+  "relay_host": "relay.batonsync.app",
+  "bundle_prefix": "app.batonsync",
+  "app_group": "group.app.batonsync",
+  "mdns_service": "_batonsync._tcp",
+  "native_host": "app.batonsync.host",
+  "worker": "batonsync-relay",
+  "repo": "batonsync/baton",
+  "url_scheme": "batonsync"
+}
