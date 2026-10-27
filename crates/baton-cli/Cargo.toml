@@ -1,5 +1,6 @@
 [package]
 name = "baton-cli"
+description = "Dev tool: fake Baton device (pair, send, receive over LAN or relay)"
 version.workspace = true
 edition.workspace = true
 license.workspace = true
@@ -7,3 +8,15 @@ rust-version.workspace = true
 
 [dependencies]
 baton-core.workspace = true
+anyhow = "1"
+base64 = "0.22"
+ed25519-dalek = { version = "2", features = ["rand_core"] }
+futures-util = "0.3"
+hex = "0.4"
+prost.workspace = true
+rand = "0.8"
+reqwest = { version = "0.12", default-features = false, features = ["json", "rustls-tls"] }
+serde_json.workspace = true
+sha2 = "0.10"
+tokio = { version = "1", features = ["full"] }
+tokio-tungstenite = "0.24"

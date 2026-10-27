@@ -13,6 +13,7 @@
 - Monorepo skeleton: Cargo workspace, `config/identity.*`, `proto/baton/v1/baton.proto` (§9.2–9.3), licences (Apache-2.0 root, AGPL-3.0 `server/`), DCO notes, gitleaks, cargo-deny config.
 - `baton-core`: protobuf types (prost via protox, no system `protoc`), HPKE Auth-mode seal/open with header-as-AAD (tests: round trip, no plaintext on wire, wrong sender / tampered header rejected), SAS code, restore-URL builder (YouTube `t=`, text fragments, existing `#hash`, tracking-param strip), transport router decision table. `cargo test -p baton-core`: 6 pass.
 - `baton-core` (2nd slice): Noise `IKpsk2` pairing handshake with matching SAS on both sides (wrong psk fails), `Noise_KK` LAN link (unknown peer rejected), pairing-link build/parse (params in URL fragment), SQLite outbox (idempotent enqueue, stale drop at 15 min, 1 s→5 min backoff), JSON restore-URL vectors. 13 unit + 1 vector test pass; clippy/fmt clean.
+- `baton-cli` relay mode: signed-request client, Noise IKpsk2 pairing through the rendezvous DO, send/receive/ack. `tests/relay_e2e.rs` (set `BATON_RELAY_URL`) passes against a local `wrangler dev` here: matching SAS, E2E `Continue` + `Clip` both ways, unpaired sender rejected, and the Worker log held no URL/title strings. Wired into `ci-server` as `relay-e2e` (not yet run in CI).
 - `server/` (15 Vitest tests in the Workers pool pass, `tsc` clean):
   - `Baton-Sig` auth (Ed25519 over `METHOD\npath\nts\nhex(sha256(body))`, ±120 s skew); `POST /v1/devices` self-signed registration, device_id = first 16 bytes of sha256(ed25519 pub).
   - `DeviceDO` (SQLite): peer grants, mailbox with TTL alarm, hibernatable WebSocket stream (auth via header on upgrade), ack/delete, spoofed-sender and unpaired-sender rejection, 12 alerts/h limit, stored bytes are opaque ciphertext (asserted).
@@ -27,6 +28,7 @@
 ## Next
 - `baton-core`: socket framing for the LAN link, mDNS advert/discovery, HPKE/pairing JSON vectors (HPKE needs deterministic-RNG hook).
 - Server: R2 lifecycle backstop test, `MODE=gateway` `/v1/push`, per-device 120 msg/min and 24 LA/h limits, `Ack{REJECTED,UNREACHABLE}` on 410, standalone `mock-apns` HTTP server for `wrangler dev` e2e.
+- `baton-cli --lan` (TCP framing over Noise_KK + mDNS) and the router fallback test (LAN killed mid-session → relay ≤ 2 s); a `clap` CLI front-end.
 - Remaining items from the plan above.
 
 ## Blocked: needs Raynan
