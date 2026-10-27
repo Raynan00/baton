@@ -63,11 +63,15 @@ async fn pair_and_exchange_through_worker() {
         .unwrap();
 
     assert_eq!(
-        pr.receive(&[desk_as_peer.clone()]).await.unwrap(),
+        pr.receive(std::slice::from_ref(&desk_as_peer))
+            .await
+            .unwrap(),
         vec![cont]
     );
     assert_eq!(
-        dr.receive(&[phone_as_peer.clone()]).await.unwrap(),
+        dr.receive(std::slice::from_ref(&phone_as_peer))
+            .await
+            .unwrap(),
         vec![clip("copied text")]
     );
 

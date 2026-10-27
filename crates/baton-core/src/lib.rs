@@ -2,6 +2,7 @@
 #![forbid(unsafe_code)]
 
 pub mod crypto;
+pub mod discovery;
 pub mod error;
 pub mod noise;
 pub mod outbox;
